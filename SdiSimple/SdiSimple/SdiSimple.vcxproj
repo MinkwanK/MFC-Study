@@ -20,9 +20,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{3D8B8B73-CA93-4B57-A499-33CF11D94964}</ProjectGuid>
+    <ProjectGuid>{79704554-CD1A-4412-B603-CBA33B5B62E8}</ProjectGuid>
     <Keyword>MFCProj</Keyword>
-    <RootNamespace>MFCReport1</RootNamespace>
+    <RootNamespace>SdiSimple</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -183,34 +183,36 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ChildView.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="MainFrm.h" />
-    <ClInclude Include="MFC_Report1.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="SdiSimple.h" />
+    <ClInclude Include="SdiSimpleDoc.h" />
+    <ClInclude Include="SdiSimpleView.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ChildView.cpp" />
     <ClCompile Include="MainFrm.cpp" />
-    <ClCompile Include="MFC_Report1.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="SdiSimple.cpp" />
+    <ClCompile Include="SdiSimpleDoc.cpp" />
+    <ClCompile Include="SdiSimpleView.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="MFCReport1.rc" />
+    <ResourceCompile Include="SdiSimple.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\MFCReport1.rc2" />
+    <None Include="res\SdiSimple.rc2" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="res\bitmap1.bmp" />
-    <Image Include="res\MFC_Report1.ico" />
+    <Image Include="res\SdiSimple.ico" />
+    <Image Include="res\SdiSimpleDoc.ico" />
     <Image Include="res\Toolbar.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
