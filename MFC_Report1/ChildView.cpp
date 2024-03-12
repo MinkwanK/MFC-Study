@@ -18,7 +18,9 @@
 
 CChildView::CChildView()
 {
-	canDraw = true;
+	color = RGB(0, 0, 0);
+	
+	cFileDialogClicked = false;
 	drawMode = false;
 	shape = 'r';
 }
@@ -49,6 +51,7 @@ BEGIN_MESSAGE_MAP(CChildView, CWnd)
 	ON_UPDATE_COMMAND_UI(ID_SHAPE_CIRCLE, &CChildView::OnUpdateShapeCircle)
 	ON_UPDATE_COMMAND_UI(ID_SHAPE_SQUARE, &CChildView::OnUpdateShapeSquare)
 	ON_COMMAND(ID_SAVE_BMP, &CChildView::OnSaveBmp)
+	ON_COMMAND(ID_SAVE_JPG, &CChildView::OnSaveJpg)
 END_MESSAGE_MAP()
 
 
@@ -83,13 +86,13 @@ int CChildView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	TRACE(_T("y 중심값 %d\n"), rect.CenterPoint().y);
 
 	//푸시 버튼 생성
-	m_pushButton.Create(_T("이미지 불러오기"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, CRect(500, 0, 1000, 100), this, 101);
-	m_radio1.Create(_T("BMP 파일"), WS_CHILD | WS_VISIBLE | WS_GROUP|BS_AUTORADIOBUTTON, CRect(500, 150, 700, 200), this, 102);
-	m_radio2.Create(_T("JPG 파일"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, CRect(800, 150, 1000, 200), this, 103);
-	m_group1.Create(_T("그룹 박스"), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, CRect(500, 100, 1000, 250), this, 104);
-	m_check1.Create(_T("그리기 체크박스"), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, CRect(1100, 100, 1300, 120), this, 105);
+	m_pushButton.Create(_T("이미지 불러오기"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, CRect(1200, 0, 1400, 100), this, 101);
+	m_radio1.Create(_T("BMP 파일"), WS_CHILD | WS_VISIBLE | WS_GROUP|BS_AUTORADIOBUTTON, CRect(1200, 150, 1300, 200), this, 102);
+	m_radio2.Create(_T("JPG 파일"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, CRect(1300, 150, 1400, 200), this, 103);
+	m_group1.Create(_T("그룹 박스"), WS_CHILD | WS_VISIBLE | BS_GROUPBOX, CRect(1100, 100, 1500, 250), this, 104);
+	//m_check1.Create(_T("그리기 체크박스"), WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, CRect(1200, 250, 1400, 300), this, 105);
 	m_radio1.SetCheck(1);
-	m_check1.SetCheck(1);
+	//m_check1.SetCheck(1);
 
 	return 0;
 }
@@ -117,100 +120,116 @@ void CChildView::OnPaint()
 
 void CChildView::OnCheckClicked()
 {
-	int checkState = m_check1.GetCheck();
+	/*int checkState = m_check1.GetCheck();*/
 
-	if (checkState)
-		canDraw = TRUE;
-	else
-		canDraw = FALSE;
+	//if (checkState)
+	//	canDraw = TRUE;
+	//else
+	//	canDraw = FALSE;
 }
 
 
 
 void CChildView::OnButtonClicked()
 {
-	
 	CDC* pDC = GetDC();
 	CString path;
-	CFileDialog dlg(TRUE); //true->불러오기 대화상자, false->저장 대화 상자
+	//NULL NULL은 기본 폴더경로 및 파일이름
+	CFileDialog dlg(TRUE, NULL,NULL, OFN_OVERWRITEPROMPT, _T("jpg 파일 (*.jpg)|*.jpg|bmp 파일 (*.bmp)|*.bmp|모든 파일(*)|*||")); //true->불러오기 대화상자, false->저장 대화 상자
 	CRect rect;
 	GetClientRect(&rect);
 	Invalidate();
-	//EnableWindow(FALSE); // 대화 상자의 유저 인터랙션 비활성화
+	
 	//DoModal() 함수를 호출하여 대화 상자를 표시한다. 사용자가 선택한 작업에 대한 결과를 반환
 	//확인 버튼이 IDOK
 	if (dlg.DoModal() == IDOK)
 	{
+		cFileDialogClicked = true;
 		path = dlg.GetPathName(); //선택한 파일 경로 path에 저장
+		CFile file;
+		BITMAPFILEHEADER bmfh;
+		DWORD dwFileSize, dwDibSize;
+		BYTE* pDib = new BYTE[dwDibSize];
+		
+		file.Open(path, CFile::modeRead);
+		dwFileSize = (DWORD)file.GetLength();
+		//전체 사이즈에서 BITMAPFILEHEADER 사이즈를 빼면 DIB 사이즈가 된다.
+		dwDibSize = dwFileSize - sizeof(BITMAPFILEHEADER);
+
+		file.Read(&bmfh, sizeof(BITMAPINFOHEADER)); //fileheader 구조체 읽기
+		file.Read(pDib, dwDibSize); //DIB 읽기
+		file.Close();
+
+		BITMAPINFOHEADER* pBmh = (BITMAPINFOHEADER*)pDib;
+		int nWidth = pBmh->biWidth;
+		int nHeight = pBmh->biHeight;
+		int nBit = pBmh->biBitCount;
+		BYTE* lpBits = NULL;
+
+		if (nBit > 8)
+		{
+			lpBits = (BYTE*)pDib + sizeof(BITMAPINFOHEADER);
+		}
+		else
+		{
+			//lpBits = (BYTE*)pDib + sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * (1 << nBit);
+		}
+
+		//데이터 화면에 표현
+		CClientDC dc(this);
+
+		::StretchDIBits(dc.m_hDC, nWidth + 10, 0, nWidth, nHeight, 0, 0, nWidth,nHeight,lpBits, (LPBITMAPINFO)pDib, DIB_RGB_COLORS, SRCCOPY);
+
 	
 	}
 
 	else { return; } //취소 선택한 경우 함수 종료
 
-	//CImage는 이미지 처리 클래스
-	//Load() 함수는 이미지를 메모리로 로드
-	CImage image;
-	HRESULT result = image.Load(path); //bmp 파일 로드
-
-	if (FAILED(result))
-	{
-		MessageBox(_T("BMP 파일을 열 수 없습니다."), NULL, MB_OK | MB_ICONERROR);
-		return;
-	}
-	int state_radio1 = m_radio1.GetCheck();
-	int state_radio2 = m_radio2.GetCheck();
-
-	if (state_radio1 == 1)
-	{
-		// 화면에 BMP 파일 그리기
-		CBitmap bitmap;
-		//Deatach() CImage 객체에서 이미지르 분리하고 제어권 상실
-		//Attatch() 분리된 이미지를 CBitmap 객체에 첨부
-		bitmap.Attach(image.Detach());
-		BITMAP bmpinfo;
-
-		//비트맵을 화면에 출력하려면 비트맵의 가로와 세로 크기를 알아야함.
-		bitmap.GetBitmap(&bmpinfo);
-
-		CDC dcmem;
-		//메모리 디바이스 컨텍스트(메모리 일부를 화면처럼 다룰 수 있게 운영체제에서 제공하는 개념) 생성
-		dcmem.CreateCompatibleDC(pDC);
-		//비트맵을 메모리 디바이스 컨텍스트에 선택
-		//메모리 DC에 비트맵 출력
-		dcmem.SelectObject(&bitmap);
-		//함수로 화면에 출력
-
 	
-
-		//한 디바이스 컨텍스트에서 다른 디바이스 컨텍스트로 비트맵 데이터 전송
-		//SRCOOPY는 원본의 모든 픽셀을 복사하는 코드
-		//마지막 인자는 픽셀값 조합 방식
-	
-		pDC->BitBlt(0, 200, bmpinfo.bmWidth, bmpinfo.bmHeight, &dcmem, 0, 0, SRCCOPY);
-		ReleaseDC(&dcmem);
-	
-	}
-	//jpg
-	else
-	{
-		CImage image;
-		HRESULT hResult = image.Load(path);
-
-		if (hResult != S_OK)
-		{
-			AfxMessageBox(_T("이미지를 불러올 수 없습니다."));
-		}
-		
-		image.Draw(pDC->m_hDC, 0, rect.CenterPoint().y - image.GetHeight() / 2);
-	}
 
 
 
 
 	ReleaseDC(pDC);
+	
 
 
 
+
+}
+
+//LPCTSTR은 Long Pointer to a constant TSTRing
+//유니코드와 멀티바이트 문자열 모두를 처리할 수 있는 포인터 형식
+//L: Long Pointer를 의미
+//P: Pointer를 의미. 포인터 형식임을 나타냄
+//C: Constant를 의미. 포인터가 가리키는 문자열이 상수임을 나타냄
+//TSTR: 유니코드와 멀티바이트 문자열을 동일하게 다루는 유니코드 문자셋에 맞는 문자열
+//메모리 주소를 포함하고 있는 상수
+HBITMAP dibLoadFromFile(LPCTSTR lpFileName)
+{
+	HANDLE hFile = CreateFile(lpFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+	if (hFile == INVALID_HANDLE_VALUE) return NULL;
+
+	BITMAPFILEHEADER bmfh;
+	DWORD dwRead;
+	ReadFile(hFile, &bmfh, sizeof(BITMAPFILEHEADER), &dwRead, NULL);
+
+	DWORD dwInfoLength = bmfh.bfOffBits - sizeof(BITMAPINFOHEADER);
+	LPBITMAPINFO lpbmi = (LPBITMAPINFO)new BYTE[dwInfoLength];
+	ReadFile(hFile, lpbmi, dwInfoLength, &dwRead, NULL);
+
+	HDC hDC = GetDC(GetDesktopWindow());
+
+	LPVOID lpDIBits;
+	HBITMAP hDIB = CreateDIBSection(hDC, lpbmi, DIB_RGB_COLORS, &lpDIBits, NULL, 0);
+	ReleaseDC(GetDesktopWindow(), hDC);
+
+	ReadFile(hFile, lpDIBits, lpbmi->bmiHeader.biSizeImage, &dwRead, NULL);
+	CloseHandle(hFile);
+
+	delete[] lpbmi;
+
+	return hDIB;
 
 
 }
@@ -248,45 +267,27 @@ void CChildView::OnShapeSquare()
 
 void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	if (canDraw) {
+	if (!cFileDialogClicked)
+	{
+		CRect rect;
+		m_pushButton.GetWindowRect(&rect);
+		// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+
+		TRACE(_T("클릭"));
+
 		drawMode = TRUE;
 		x1 = x2 = point.x;
 		y1 = y2 = point.y;
 	}
-}
-
-
-void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
-{
-	if (canDraw) {
-		CClientDC dc(this);
-
-		CBrush brush;
-		brush.CreateSolidBrush(color);
-
-		dc.SelectObject(brush);
-		dc.SetROP2(R2_COPYPEN);
-		x2 = point.x;
-		y2 = point.y;
-		if (shape == 'r')
-		{
-			dc.Rectangle(x1, y1, x2, y2);
-		}
-		else
-		{
-			dc.Ellipse(x1, y1, x2, y2);
-		}
-
-		drawMode = FALSE;
-	}
+		
+	
 	
 }
 
-
 void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 {
-	if (drawMode  && canDraw)
+	if (drawMode && !cFileDialogClicked)
 	{
 		CClientDC dc(this);
 		dc.SelectStockObject(NULL_BRUSH);
@@ -313,6 +314,43 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 	}
 
 }
+
+
+void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	if (!cFileDialogClicked) 
+	{
+
+			CClientDC dc(this);
+
+			CBrush brush;
+			brush.CreateSolidBrush(color);
+
+			dc.SelectObject(brush);
+			dc.SetROP2(R2_COPYPEN);
+			x2 = point.x;
+			y2 = point.y;
+			if (shape == 'r')
+			{
+				dc.Rectangle(x1, y1, x2, y2);
+			}
+			else
+			{
+				dc.Ellipse(x1, y1, x2, y2);
+			}
+
+			drawMode = FALSE;
+	}
+	
+	else
+	{
+		cFileDialogClicked = false;
+		x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+	}
+	
+}
+
+
 
 
 void CChildView::OnColorBlack()
@@ -361,46 +399,99 @@ void CChildView::OnUpdateShapeSquare(CCmdUI* pCmdUI)
 
 void CChildView::OnSaveBmp()
 {
-	
+	CDC* pDC = GetDC();
+	CString path;
+	CFileDialog dlg(FALSE,NULL,NULL); //true->불러오기 대화상자, false->저장 대화 상자
+
+
+
+	//DoModal() 함수를 호출하여 대화 상자를 표시한다. 사용자가 선택한 작업에 대한 결과를 반환
+	//확인 버튼이 IDOK
+	if (dlg.DoModal() == IDOK)
+	{
+		path = dlg.GetPathName(); //선택한 파일 경로 path에 저장
+
+	}
+
+	else { return; } //취소 선택한 경우 함수 종료
 	
 	//가상 스크린의 폭과 높이를 얻음. 모니터의 크기가 아니라 모든 연결된 모니터들의 영역을 합친 화면 영역을 얻음
-	int iWidth = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-	int iHeight = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+	//int iWidth = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+	//int iHeight = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+	
+	
+
+	//데스크톱 윈도우의 핸들을 전달. 전체 화면을 대상으로 한 그래픽 작업 수행에 적합
+	CClientDC dc(this);
+	CDC memDC;
+	CBitmap bmp;
+	//현재 클라이언트 크기 구하기
+	CRect rect;
+	GetClientRect(&rect);
+	int iWidth = rect.Width();
+	int iHeight = rect.Height();
+
+
+	bmp.CreateCompatibleBitmap(&dc, rect.Width(), rect.Height());
+	memDC.CreateCompatibleDC(&dc);
+	memDC.SelectObject(&bmp);
+	memDC.BitBlt(0, 0, rect.Width(), rect.Height(), &dc, rect.left, rect.top, SRCCOPY);
+
+	CImage image;
+	image.Attach(bmp);
+	image.Save(path+".bmp");
+	MessageBox(_T("저장완료"));
+	TRACE(_T("파일 저장 경로값 %s\n"), path);
+
+}
+
+
+void CChildView::OnSaveJpg()
+{
+	CDC* pDC = GetDC();
+	CString path;
+	CFileDialog dlg(FALSE, NULL, NULL); //true->불러오기 대화상자, false->저장 대화 상자
+
+
+
+	//DoModal() 함수를 호출하여 대화 상자를 표시한다. 사용자가 선택한 작업에 대한 결과를 반환
+	//확인 버튼이 IDOK
+	if (dlg.DoModal() == IDOK)
+	{
+		path = dlg.GetPathName(); //선택한 파일 경로 path에 저장
+
+	}
+
+	else { return; } //취소 선택한 경우 함수 종료
+
+	//가상 스크린의 폭과 높이를 얻음. 모니터의 크기가 아니라 모든 연결된 모니터들의 영역을 합친 화면 영역을 얻음
+	//int iWidth = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+	//int iHeight = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
 
 
 	//데스크톱 윈도우의 핸들을 전달. 전체 화면을 대상으로 한 그래픽 작업 수행에 적합
-	CClientDC clsScreenDC(GetDesktopWindow());
-	CImage clsImage;
-	HRESULT hr;
-
-
-
-	// 전체 화면 캡처 이미지를 저장할 객체를 생성한다.
-
-	if (clsImage.Create(iWidth, iHeight, 24))
-	{
-		HDC hDC = clsImage.GetDC();
-		if (hDC)
-		{
-
-			// 전체 화면을 이미지 객체 DC 에 그린다.
-			StretchBlt(hDC, 0, 0, iWidth, iHeight, clsScreenDC, 0, 0, iWidth, iHeight, SRCCOPY);
-			clsImage.ReleaseDC();
-
-
-
-			// 이미지 파일을 저장한다.
-
-			hr = clsImage.Save(_T("c:\\temp\\screen.jpg"));
-			if (FAILED(hr))
-			{
-				TRACE(_T("Save error\n"));
-			}
-		}
-	}
-	
-
-
+	CClientDC dc(this);
+	CDC memDC;
+	CBitmap bmp;
+	//현재 클라이언트 크기 구하기
+	CRect rect;
+	GetClientRect(&rect);
+	int iWidth = rect.Width();
+	int iHeight = rect.Height();
 
 	
+	//생성할 비트맵과 호환되는 장치 컨텍스트, 비트맵의 너비, 비트맵의 높이
+	//호환 비트맵의 핸들을 반환한다. 이 핸들을 사용하여 비트맵 조작 및 다른 DC에 비트맵 복삭 ㅏ가능하다.
+	bmp.CreateCompatibleBitmap(&dc, rect.Width(), rect.Height());
+	//메모리 디바이스 컨텍스트 생성
+	memDC.CreateCompatibleDC(&dc);
+	memDC.SelectObject(&bmp);
+	memDC.BitBlt(0, 0, rect.Width(), rect.Height(), &dc, rect.left, rect.top, SRCCOPY);
+
+	CImage image;
+	image.Attach(bmp);
+	image.Save(path + ".jpg");
+	MessageBox(_T("저장완료"));
+	TRACE(_T("파일 저장 경로값 %s\n"), path);
 }

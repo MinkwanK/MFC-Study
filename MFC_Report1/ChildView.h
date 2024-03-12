@@ -22,8 +22,8 @@ public:
 	CButton m_group1;
 	CButton m_check1;
 
-	BOOL canDraw;
 	BOOL drawMode;
+	BOOL cFileDialogClicked;
 	int x1, y1, x2, y2;
 	char shape;
 	COLORREF color;
@@ -63,5 +63,6 @@ public:
 	afx_msg void OnUpdateShapeSquare(CCmdUI* pCmdUI);
 	void OnCheckClicked();
 	afx_msg void OnSaveBmp();
+	afx_msg void OnSaveJpg();
 };
 
