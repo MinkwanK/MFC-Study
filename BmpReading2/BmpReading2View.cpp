@@ -40,7 +40,6 @@ CBmpReading2View::CBmpReading2View() noexcept
 		BmInfo->bmiColors[i].rgbRed = BmInfo->bmiColors[i].rgbGreen = BmInfo->bmiColors[i].rgbReserved = 0;
 	}
 
-
 }
 
 CBmpReading2View::~CBmpReading2View()
@@ -135,6 +134,16 @@ void CBmpReading2View::OnDraw(CDC* pDC)
 }
 
 
+void LoadJpgFile()
+{
+	int ImageWidth = 640;
+	int ImageHeight = 480;
+
+	int decodedBufferSize = ImageWidth * ImageHeight * 3;
+	void* DecodedBuffer = malloc(decodedBufferSize);
+
+
+}
 // CBmpReading2View 진단
 
 #ifdef _DEBUG
@@ -182,43 +191,66 @@ void CBmpReading2View::OnMouseMove(UINT nFlags, CPoint point)
 }
 
 
+//save 하고 싶은데 잘 안됨 ㅜㅜ
+
+//현재 화면 Rect 대로 캡쳐
+//bmp파일로 저장
+//CFile에 write하기
 void CBmpReading2View::OnSaveBmp()
 {
-	CDC* pDC = GetDC();
-	CString path;
-	CFileDialog dlg(FALSE, NULL, NULL);
+	//HDC h_screen_dc = ::GetDC(NULL);
+	//CRect rect;
+	//GetClientRect(&rect);
+	//int width = rect.Width();
+	//int height = rect.Height();
 
-	if (dlg.DoModal() == IDOK)
-	{
-		path = dlg.GetPathName();
-	}
+	//BITMAPINFO dib_define;
+	//dib_define.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	//dib_define.bmiHeader.biWidth = width;
+	//dib_define.bmiHeader.biHeight = height;
+	//dib_define.bmiHeader.biPlanes = 1;
+	//dib_define.bmiHeader.biBitCount = 24;
+	//dib_define.bmiHeader.biCompression = BI_RGB;
+	//dib_define.bmiHeader.biSizeImage = (((width * 24 + 31) & ~31) >> 3) * height;
+	//dib_define.bmiHeader.biXPelsPerMeter = 0;
+	//dib_define.bmiHeader.biYPelsPerMeter = 0;
+	//dib_define.bmiHeader.biClrImportant = 0;
+	//dib_define.bmiHeader.biClrUsed = 0;
 
-	else { return; }
 
-	CClientDC dc(this);
-	CDC memDC;
-	CBitmap bmp;
-	BITMAP bitmapInfo;
-	CRect rect;
-	GetClientRect(&rect);
-	int width = rect.Width();
-	int height = rect.Height();
+	////DIB의 내부 이미지 비트 패턴을 참조할 포인터 변수
+	//BYTE* p_image_data = NULL;
 
-	bmp.CreateCompatibleBitmap(&dc, rect.Width(), rect.Height());
-	memDC.CreateCompatibleDC(&dc);
-	memDC.SelectObject(&bmp);
-	memDC.BitBlt(0, 0, rect.Width(), rect.Height(), &dc, rect.left, rect.top, SRCCOPY);
+	////DIB 생성
+	//HBITMAP h_bitmap = ::CreateDIBSection(h_screen_dc, &dib_define, DIB_RGB_COLORS, (void**)&p_image_data, 0, 0);
 
-	CFile file;
-	bmp.GetBitmap(&bitmapInfo);
-	if (file.Open(path, CFile::modeCreate | CFile::modeWrite | CFile::typeText))
-	{	
-		
-		file.Write(bmp, sizeof(BITMAPFILEHEADER));
-		file.Write(bmp, sizeof(BITMAPINFOHEADER));
-		file.Write(bmp, bitmapInfo.);
-		
-	}
+	////가상 DC 생성 
+	//HDC h_memory_dc = ::CreateCompatibleDC(h_screen_dc);
+
+	////가상 DC에 이미지를 추출할 비트맵 연결
+	//HBITMAP h_old_bitmap = (HBITMAP)::SelectObject(h_memory_dc, h_bitmap);
+
+	////현재 스크린 화면 캡쳐
+	//::BitBlt(h_memory_dc, 0, 0, width, height, h_screen_dc, 0, 0, SRCCOPY);
+
+	////본래의 비트맵으로 복구
+	//::SelectObject(h_memory_dc, h_old_bitmap);
+
+	////가상 DC 제거
+	//DeleteDC(h_memory_dc);
+
+	////DIB 파일의 헤더 내용 구성
+	//BITMAPFILEHEADER dib_format_layout;
+	//ZeroMemory(&dib_format_layout, sizeof(BITMAPFILEHEADER));
+	//dib_format_layout.bfType = *(WORD*)"BM";
+	//dib_format_layout.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + dib_define.bmiHeader.biSizeImage; dib_format_layout.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+
+	//// DIB 파일을 생성한다.
+	//FILE *p_file = fopen("image.bmp", "wb");if(p_file != NULL){    fwrite(&dib_format_layout, 1, sizeof(BITMAPFILEHEADER), p_file);    fwrite(&dib_define, 1, sizeof(BITMAPINFOHEADER), p_file);    fwrite(p_image_data, 1, dib_define.bmiHeader.biSizeImage, p_file);    fclose(p_file);}
+
+	//// 사용했던 비트맵과 DC 를 해제한다.if(NULL != h_bitmap) DeleteObject(h_bitmap);if(NULL != h_screen_dc) ::ReleaseDC(NULL, h_screen_dc);
+
+	//// 캡쳐를 하기 위해서 감춘 화면을 다시 보여준다.ShowWindow(SW_SHOW);
 
 	
 }

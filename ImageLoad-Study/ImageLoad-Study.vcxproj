@@ -211,6 +211,10 @@
     <None Include="res\ImageLoadStudy.rc2" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="res\bitmap1.bmp" />
+    <Image Include="res\bitmap2.bmp" />
+    <Image Include="res\bitmap3.bmp" />
+    <Image Include="res\bitmap4.bmp" />
     <Image Include="res\ImageLoad-Study.ico" />
     <Image Include="res\ImageLoad-StudyDoc.ico" />
     <Image Include="res\Toolbar.bmp" />

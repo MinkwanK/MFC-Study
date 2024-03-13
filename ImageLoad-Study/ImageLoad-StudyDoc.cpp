@@ -71,14 +71,15 @@ BOOL CImageLoadStudyDoc::OnOpenDocument(LPCTSTR lpszPathName)
 		//파일을 읽을 때마다 파일 포인터가 움직인다.
 		hFile.Read(&dibHf, sizeof(BITMAPFILEHEADER));
 		hFile.Read(&dibHi, sizeof(BITMAPINFOHEADER));
-		if (dibHi.biBitCount != 8 && dibHi.biBitCount != 24)
+		if (dibHi.biBitCount != 8 &&  dibHi.biBitCount != 24)
 		{
 			AfxMessageBox(_T("need gray/true color"));
 			return FALSE;
 		}
+		
+		
 		if (dibHi.biBitCount == 8)
 			hFile.Read(palRGB, sizeof(RGBQUAD) * 256); //2^8승
-
 		//메모리 할당
 		int ImgSize;
 		if (dibHi.biBitCount == 8)
@@ -136,7 +137,33 @@ CString CImageLoadStudyDoc::GetFileExtension(const CString& filePath)
 
 BOOL CImageLoadStudyDoc::OnSaveDocument(LPCTSTR lpszPathName)
 {
-	return 0;
+	CFile hFile;
+	CString fileExtension = GetFileExtension(lpszPathName);
+	if (!hFile.Open(lpszPathName, CFile::modeCreate | CFile::modeWrite | CFile::typeBinary))
+		return FALSE;
+	if (fileExtension == "bmp")
+	{
+		AfxMessageBox(_T("bmp"));
+		hFile.Write(&dibHf, sizeof(BITMAPFILEHEADER));
+		hFile.Write(&dibHi, sizeof(BITMAPINFOHEADER));
+
+		if (dibHi.biBitCount == 8)
+			hFile.Write(palRGB, sizeof(RGBQUAD) * 256);
+		hFile.Write(m_InImg, dibHi.biSizeImage);
+		hFile.Close();
+
+	}
+	else if(fileExtension == "jpg")
+	{
+		hFile.Write(jpgData, jpgSize);
+		hFile.Close();
+	}
+
+	TRACE(_T("OnSaveDocument: %s",lpszPathName));
+	TRACE(_T("OnSaveDocument"));
+	
+
+	return TRUE;
 }
 
 void CImageLoadStudyDoc::Serialize(CArchive& ar)

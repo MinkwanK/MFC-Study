@@ -17,6 +17,7 @@ public:
 
 // 작업입니다.
 public:
+	CButton m_jpgButton;
 
 // 재정의입니다.
 public:

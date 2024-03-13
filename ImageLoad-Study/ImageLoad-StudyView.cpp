@@ -23,6 +23,8 @@
 IMPLEMENT_DYNCREATE(CImageLoadStudyView, CView)
 
 BEGIN_MESSAGE_MAP(CImageLoadStudyView, CView)
+	ON_WM_LBUTTONDOWN()
+	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
 // CImageLoadStudyView 생성/소멸
@@ -30,6 +32,11 @@ END_MESSAGE_MAP()
 CImageLoadStudyView::CImageLoadStudyView() noexcept
 {
 	// TODO: 여기에 생성 코드를 추가합니다.
+	BmInfo = (BITMAPINFO*)malloc(sizeof(BITMAPINFO) + 256 * sizeof(RGBQUAD));
+	for (int i = 0; i < 256; i++)
+	{
+		BmInfo->bmiColors[i].rgbRed = BmInfo->bmiColors[i].rgbGreen = BmInfo->bmiColors[i].rgbReserved = 0;
+	}
 
 }
 
@@ -169,3 +176,31 @@ CImageLoadStudyDoc* CImageLoadStudyView::GetDocument() const // 디버그되지 
 
 
 // CImageLoadStudyView 메시지 처리기
+
+
+void CImageLoadStudyView::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	CClientDC dc(this);
+	dc.MoveTo(point.x, point.y);
+	m_p.x = point.x;
+	m_p.y = point.y;
+
+	CView::OnLButtonDown(nFlags, point);
+}
+
+
+void CImageLoadStudyView::OnMouseMove(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	CClientDC dc(this);
+	if ((nFlags && MK_LBUTTON) == MK_LBUTTON) {
+		dc.MoveTo(m_p.x, m_p.y);
+		dc.LineTo(point.x, point.y);
+		m_p.x = point.x;
+		m_p.y = point.y;
+	}
+	
+
+
+	CView::OnMouseMove(nFlags, point);
+}
