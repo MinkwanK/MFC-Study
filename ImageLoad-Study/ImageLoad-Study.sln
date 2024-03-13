@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.34601.136
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImageLoad-Study", "ImageLoad-Study.vcxproj", "{47AE82AE-95DA-4985-B29F-B8385C0338A0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{47AE82AE-95DA-4985-B29F-B8385C0338A0}.Debug|x64.ActiveCfg = Debug|x64
+		{47AE82AE-95DA-4985-B29F-B8385C0338A0}.Debug|x64.Build.0 = Debug|x64
+		{47AE82AE-95DA-4985-B29F-B8385C0338A0}.Debug|x86.ActiveCfg = Debug|Win32
+		{47AE82AE-95DA-4985-B29F-B8385C0338A0}.Debug|x86.Build.0 = Debug|Win32
+		{47AE82AE-95DA-4985-B29F-B8385C0338A0}.Release|x64.ActiveCfg = Release|x64
+		{47AE82AE-95DA-4985-B29F-B8385C0338A0}.Release|x64.Build.0 = Release|x64
+		{47AE82AE-95DA-4985-B29F-B8385C0338A0}.Release|x86.ActiveCfg = Release|Win32
+		{47AE82AE-95DA-4985-B29F-B8385C0338A0}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6094BC6D-87DE-40F6-8F90-8BE7112ADC2B}
+	EndGlobalSection
+EndGlobal
