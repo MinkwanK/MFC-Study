@@ -35,7 +35,9 @@ public:
 	RGBQUAD palRGB[256]; //팔레트 정보 구조체 배열
 
 	BYTE* m_outJpgBuffer;
-	UINT m_jpgSize;
+	BYTE* m_paddingAddedBuffer;
+	UINT m_decodedSize;
+
 	TB_JPEG_HEADER_INFO m_jpegHeaderInfo;
 	CTubojpg m_jpgCodec; //jpgCodec
 	char loadMode;

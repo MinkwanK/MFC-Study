@@ -12,6 +12,7 @@
 #endif
 
 #define WIDTHBYTES(bits) (((bits)+31)/32*4); //이미지 가로 바이트 길이는 4바이트의 배수 (?)
+#define STRIDE(W) W + (W % 4 != 0 ? 4 - W % 4 : 0);
 // CChildView
 
 CChildView::CChildView()
@@ -20,8 +21,9 @@ CChildView::CChildView()
 
 CChildView::~CChildView()
 {
-	//delete m_outJpgBuffer;
-	//delete m_jpegHeaderInfo.pJpegData;
+	delete[] m_outJpgBuffer;
+	delete[] m_paddingAddedBuffer;
+	delete[] m_jpegHeaderInfo.pJpegData;
 }
 
 
@@ -118,7 +120,35 @@ void CChildView::OnPaint()
 	}
 	else if (loadMode == 'j')
 	{
-		//iColor는 어떻게 가져오지??
+		//패딩 구하기
+		int paddingAddedWidth = STRIDE(m_jpegHeaderInfo.iWidth);
+		int padding = paddingAddedWidth - m_jpegHeaderInfo.iWidth;
+		CString paddingMessage;
+		paddingMessage.Format(_T("paddingMessage: %d"), paddingAddedWidth);
+		AfxMessageBox(paddingMessage);
+
+		//새로운 버퍼에 패딩이 적용된 사이즈 할당
+		int paddingAddedSize = m_decodedSize + (padding*3*m_jpegHeaderInfo.iHeight);
+		 m_paddingAddedBuffer = new BYTE[paddingAddedSize];
+	
+		//버퍼 기록 위치를 바꿔줄 바이터 포인터
+		int bytePointer = 0;		
+		//새로운 패딩 추가 버퍼에 데이터 옮기기
+		for (int i = 0; i < m_jpegHeaderInfo.iHeight; i++)
+		{
+			for (int j = 0; j < m_jpegHeaderInfo.iWidth*3; j++)
+			{
+				m_paddingAddedBuffer[bytePointer++] = m_outJpgBuffer[i * m_jpegHeaderInfo.iWidth * 3  + j];
+				
+			}
+
+			for (int k = 0; k < padding*3; k++)
+			{
+				m_paddingAddedBuffer[bytePointer++] = 0;
+			}
+		}
+	
+		m_jpegHeaderInfo.iWidth = paddingAddedWidth;
 		BITMAPINFO* bitInfo = NULL;
 		bitInfo = new BITMAPINFO;
 		bitInfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -128,36 +158,19 @@ void CChildView::OnPaint()
 		bitInfo->bmiHeader.biCompression = BI_RGB;
 		bitInfo->bmiHeader.biWidth = m_jpegHeaderInfo.iWidth;
 		bitInfo->bmiHeader.biHeight = -m_jpegHeaderInfo.iHeight;
+		
+		//비트맵을 실제 크기로 확대 또는 축소하여 그릴 때 각 픽셀을 단순히 복사
+		SetStretchBltMode(dc.GetSafeHdc(), COLORONCOLOR);  // set iMode.
+		if (StretchDIBits(dc.GetSafeHdc(), 0, 0, m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight, 0, 0,
+			m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight,
+			m_paddingAddedBuffer, bitInfo, DIB_RGB_COLORS, SRCCOPY) != GDI_ERROR)
+		{
+			TRACE(_T("StretchDIBits 성공"));
 	
-
-
-		//pixel format 을 정하는 이유는 디코딩된 이미지를 어떤 형식으로 처리하고 사용할지
-		//if (m_jpgCodec.DecodeImage(m_jpegHeaderInfo.pJpegData, m_jpegHeaderInfo.iJpegSize, m_outJpgBuffer, m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight, TJPF_RGB))
-		//{
-			LONG rwSize = WIDTHBYTES(m_jpegHeaderInfo.iWidth * 24);
-			//디코딩한 이미지의 가로를 4바이트의 배수로 맞춰줘야 한다. 비트맵으로 출력해야하니까.
-			m_jpegHeaderInfo.iWidth = rwSize;
-			//패딩 비트 추가
-			BYTE* paddingOutBuffer = new BYTE[m_jpegHeaderInfo.iJpegSize + rwSize - m_jpegHeaderInfo.iWidth];
-			memcpy(paddingOutBuffer, m_outJpgBuffer, m_jpegHeaderInfo.iJpegSize);
-			bitInfo->bmiHeader.biWidth = rwSize;
-			
-			SetStretchBltMode(dc.GetSafeHdc(), COLORONCOLOR);  // set iMode.
-			if (StretchDIBits(dc.GetSafeHdc(), 0, 0, m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight, 0, 0,
-				m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight,
-				m_outJpgBuffer, bitInfo, DIB_RGB_COLORS, SRCCOPY) != GDI_ERROR)
-			{
-				TRACE(_T("StretchDIBits 성공"));
-
-				CString message;
-				message.Format(_T("m_jPeg Width: %d m_jPeg Height: %d"), m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight);
-				AfxMessageBox(message);
-				message.Format(_T("bitInfo->bmiHeader.biWidth: %d bitInfo->bmiHeader.biHeight: %d"), bitInfo->bmiHeader.biWidth, bitInfo->bmiHeader.biHeight);
-
-
-				
-			}		
+		}		
 		TRACE(_T("JPG File Paint Complete \n"));
+
+		delete bitInfo;
 
 		
 	}
@@ -219,6 +232,7 @@ void CChildView::OnLoadBmp()
 }
 
 
+//Jpeg 불러오기 (디코딩 수행)
 void CChildView::OnLoadJpeg()
 {
 	m_jpegHeaderInfo.iHeight = 0;
@@ -240,12 +254,12 @@ void CChildView::OnLoadJpeg()
 		m_jpegHeaderInfo.pJpegData = new BYTE[m_jpegHeaderInfo.iJpegSize];
 		cFile.Read(m_jpegHeaderInfo.pJpegData, m_jpegHeaderInfo.iJpegSize);
 
-		m_jpgCodec.DecodeImage(m_jpegHeaderInfo.pJpegData, m_jpegHeaderInfo.iJpegSize, m_outJpgBuffer, m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight, 0);
-		TRACE(_T("JPG File Load and Read Complete \n"));
+		//디코딩 수행.
+		//디코딩 수행 결과물: Width, Height,디코딩 된 이미지 버퍼
+		m_jpgCodec.DecodeImage(m_jpegHeaderInfo.pJpegData, m_jpegHeaderInfo.iJpegSize, m_outJpgBuffer, m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight, TJPF_BGR);
+		m_decodedSize = m_jpegHeaderInfo.iWidth * m_jpegHeaderInfo.iHeight * 3;
 		loadMode = 'j';
-		CString message;
-		message.Format(_T("Width: %d Height: %d"), m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight);
-		AfxMessageBox(message);
+	
 		Invalidate();
 	}
 
@@ -300,27 +314,25 @@ void CChildView::OnSaveJpeg()
 	hFile.Open(path, CFile::modeCreate | CFile::modeWrite | CFile::typeBinary);
 
 	//인코딩 시에 동적할당
-	LPBYTE m_encodedJpgBuffer = NULL;
+	LPBYTE encodedJpgBuffer = NULL;
 	//인코딩하고 정해질 파일 사이즈
 	m_jpegHeaderInfo.iJpegSize = 0;
 	
 	if
-		(m_jpgCodec.EncodeImage(m_outJpgBuffer, 590, m_jpegHeaderInfo.iHeight, &m_encodedJpgBuffer,m_jpegHeaderInfo.iJpegSize, 90, TJPF_RGB))
+		(m_jpgCodec.EncodeImage(m_paddingAddedBuffer, m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight, &encodedJpgBuffer,m_jpegHeaderInfo.iJpegSize, 90, TJPF_BGR))
 	{
 		TRACE(_T("\nEncoding Success\n"));
 		TRACE(_T("\n %d \n", outJpegSize));
-		hFile.Write(m_encodedJpgBuffer, m_jpegHeaderInfo.iJpegSize);
+		hFile.Write(encodedJpgBuffer, m_jpegHeaderInfo.iJpegSize);
 
-		//delete m_encodedJpgBuffer;
+		
 	}
 	else
 	{
 		TRACE(_T("\nEncoding failed\n"));
 	}
 
-	hFile.Close();
-
-
+	hFile.Close();	
 	TRACE(_T("OnSaveDocument"));
 
 
