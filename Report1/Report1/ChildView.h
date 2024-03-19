@@ -29,18 +29,20 @@ public:
 
 // 특성입니다.
 public:
-	unsigned char* m_InImg;  //bmp파일의 이미지 내용 저장
-	BITMAPFILEHEADER dibHf; //비트맵 파일 헤드 구조체
-	BITMAPINFOHEADER dibHi; //비트맵 영상 헤드 구조체
-	RGBQUAD palRGB[256]; //팔레트 정보 구조체 배열
+	unsigned char* m_InBmpImg;  //bmp파일의 이미지 내용 저장
+	BITMAPFILEHEADER m_dibhf; //비트맵 파일 헤드 구조체
+	BITMAPINFOHEADER m_dibHi; //비트맵 영상 헤드 구조체
+	RGBQUAD m_palRGB[256]; //팔레트 정보 구조체 배열
 
 	BYTE* m_outJpgBuffer;
 	BYTE* m_paddingAddedBuffer;
+	BITMAPINFO* m_bitInfo;
 	UINT m_decodedSize;
 
 	TB_JPEG_HEADER_INFO m_jpegHeaderInfo;
 	CTubojpg m_jpgCodec; //jpgCodec
-	char loadMode;
+	char m_loadMode;
+	int m_dogTest = 1;
 
 // 작업입니다.
 public:
@@ -62,5 +64,15 @@ public:
 	afx_msg void OnLoadJpeg();
 	afx_msg void OnSaveBmp();
 	afx_msg void OnSaveJpeg();
+	afx_msg void OnTestEnd();
+	afx_msg void OnTestImage();
+	afx_msg void OnTestSimple();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
+
+	
+	void OnLoadImageTest();
+	void OnPrepareJpegImage();
+	void OnPrepareBmpImage();	
+	void PrintTrace();
 };
 
