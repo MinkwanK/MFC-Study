@@ -26,17 +26,12 @@ CChildView::CChildView()
 
 CChildView::~CChildView()
 {
-	if (m_bitInfo != nullptr)
+	
 	delete m_bitInfo;
-	if (m_outJpgBuffer != nullptr)
 	delete[] m_outJpgBuffer;
-	if(m_paddingAddedBuffer!=nullptr)
 	delete[] m_paddingAddedBuffer;
-	if (m_jpegHeaderInfo.pJpegData != nullptr)
 	delete[] m_jpegHeaderInfo.pJpegData;
-
-	if (m_InBmpImg != nullptr)
-		delete m_InBmpImg;
+	delete m_InBmpImg;
 
 	OnTestEnd();
 
@@ -361,7 +356,6 @@ void CChildView::OnPrepareJpegImage()
 
 void CChildView::OnPrepareBmpImage()
 {
-	CDC* dc = GetDC();
 	int height;
 	int width;
 	int rwsize;
@@ -372,6 +366,8 @@ void CChildView::OnPrepareBmpImage()
 		width = m_dibHi.biWidth;
 		m_bitInfo->bmiHeader = m_dibHi;
 	}
+
+	
 	
 }
 
