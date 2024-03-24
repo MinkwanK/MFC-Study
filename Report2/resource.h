@@ -8,9 +8,15 @@
 #define IDD_REPORT2_DIALOG              102
 #define IDR_MAINFRAME                   128
 #define IDC_EDIT1                       1000
+#define IDC_EDIT_LOADPATH               1000
 #define IDC_BUTTON_SEARCH               1001
 #define IDC_BUTTON_DIR                  1002
+#define IDC_BUTTON_LOADDIR              1002
 #define IDC_STATIC2                     1003
+#define IDC_STATIC_PICTURE              1003
+#define IDC_EDIT_SAVEPATH               1004
+#define IDC_BUTTON_SAVEDIR              1005
+#define IDC_BUTTON_SAVE                 1006
 
 // Next default values for new objects
 // 
