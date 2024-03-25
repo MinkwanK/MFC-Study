@@ -71,7 +71,7 @@ public:
 	void LoadJpegFile();
 	void PrepareJpegImage(int iDecodedJpegSize);
 	CStatic m_PictureControl;
-	void CReport2Dlg::DrawDataInfo(int index);
+	void CReport2Dlg::DrawDataInfo(CDC* memDC);
 	CEdit m_editSavePath;
 	afx_msg void OnBnClickedButtonSavedir();
 	void DrawColorText(CDC* pDC, CRect& rcText, COLORREF clrText, COLORREF clrOutline, CString& csText, UINT uiFormat);

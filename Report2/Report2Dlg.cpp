@@ -372,7 +372,6 @@ void CReport2Dlg::LoadJpegFile()
 
 			m_jpgCodec.DecodeImage(m_jpegHeaderInfo.pJpegData, m_jpegHeaderInfo.iJpegSize, m_outJpgBuffer, m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight, TJPF_BGR);
 			PrepareJpegImage(m_jpegHeaderInfo.iWidth * m_jpegHeaderInfo.iHeight * 3);
-			DrawDataInfo();
 		}
 
 	}
@@ -411,12 +410,17 @@ void CReport2Dlg::PrepareJpegImage(int iDecodedJpegSize)
 	m_bitInfo->bmiHeader.biWidth = m_jpegHeaderInfo.iWidth;
 	m_bitInfo->bmiHeader.biHeight = -m_jpegHeaderInfo.iHeight;
 
+	CBitmap cBitmap;
 	CDC* cMemoryDC = NULL;
-	cMemoryDC->CreateCompatibleDC
-	HBITMAP hBitmap = CreateDIBitmap(hMemoryDC, &m_bitInfo->bmiHeader, 0, m_paddingAddedBuffer, m_bitInfo, DIB_RGB_COLORS);
-	SelectObject(hMemoryDC, hBitmap);
-
-
+	//반환값은 메모리 DC에 대한 핸들
+	cMemoryDC->CreateCompatibleDC(m_PictureControl.GetDC());
+	
+	//반환값은 호환되는 비트맵에 대한 핸들
+	if (cBitmap.CreateCompatibleBitmap(m_PictureControl.GetDC(),m_bitInfo->bmiHeader.biWidth, m_bitInfo->bmiHeader.biHeight)) {
+		
+		cMemoryDC->SelectObject(cBitmap);
+		//DrawDataInfo(cMemoryDC);
+	}
 
 
 }
@@ -446,32 +450,30 @@ void CReport2Dlg::DrawColorText(CDC* pDC, CRect& rcText, COLORREF clrText, COLOR
 }
 
 //사진의 헤더 정보 화면에 출력
-void CReport2Dlg::DrawDataInfo(int index)
+void CReport2Dlg::DrawDataInfo(CDC* memDC)
 {
-	CDC* pDC = m_PictureControl.GetDC();
-
 	COLORREF crText = RGB(255, 255, 0);
 	COLORREF crBack = RGB(0, 0, 0);
 	int iTextHeight = 35;
-	pDC->SetBkMode(TRANSPARENT); // 배경색을 투명하게 설정
-	pDC->SetTextColor(crText);
+	memDC->SetBkMode(TRANSPARENT); // 배경색을 투명하게 설정
+	memDC->SetTextColor(crText);
 	CRect rcText;
 	m_PictureControl.GetWindowRect(rcText);
 	CString sText;
 
 	rcText.OffsetRect(5, 5);
 	sText.Format(_T("Width:   %d"), m_jpegHeaderInfo.iWidth);
-	DrawColorText(pDC, rcText, crText, crBack, sText, DT_LEFT | DT_TOP | DT_SINGLELINE);
+	DrawColorText(memDC, rcText, crText, crBack, sText, DT_LEFT | DT_TOP | DT_SINGLELINE);
 	rcText.OffsetRect(0, iTextHeight);
 	sText.Format(_T("Height:  %d"), m_jpegHeaderInfo.iHeight);
-	DrawColorText(pDC, rcText, crText, crBack, sText, DT_LEFT | DT_TOP | DT_SINGLELINE);
+	DrawColorText(memDC, rcText, crText, crBack, sText, DT_LEFT | DT_TOP | DT_SINGLELINE);
 	rcText.OffsetRect(0, iTextHeight);
 	sText.Format(_T("Size:    %d"), m_jpegHeaderInfo.iJpegSize);
-	DrawColorText(pDC, rcText, crText, crBack, sText, DT_LEFT | DT_TOP | DT_SINGLELINE);
+	DrawColorText(memDC, rcText, crText, crBack, sText, DT_LEFT | DT_TOP | DT_SINGLELINE);
 
 	CFile cFile;
 	CFileStatus cFileStatus;
-	cFile.Open(m_sLoadDirPath + m_sArrayJpegName[index], CFile::modeRead | CFile::typeBinary);
+	cFile.Open(m_sLoadDirPath + m_sArrayJpegName[m_iDrawIndex], CFile::modeRead | CFile::typeBinary);
 	cFile.GetStatus(cFileStatus);
 	cFile.Close();
 
@@ -480,7 +482,7 @@ void CReport2Dlg::DrawDataInfo(int index)
 
 	rcText.OffsetRect(0, iTextHeight);
 	sText.Format(_T("Time: %04d.%02d.%02d.%02d.%02d.%02d"), cFileStatus.m_ctime.GetYear(), cFileStatus.m_ctime.GetMonth(), cFileStatus.m_ctime.GetDay(), cFileStatus.m_ctime.GetHour(), cFileStatus.m_ctime.GetMinute(), cFileStatus.m_ctime.GetSecond());
-	DrawColorText(pDC, rcText, crText, crBack, sText, DT_LEFT | DT_TOP | DT_SINGLELINE);
+	DrawColorText(memDC, rcText, crText, crBack, sText, DT_LEFT | DT_TOP | DT_SINGLELINE);
 
 	
 
