@@ -61,6 +61,9 @@ CReport2Dlg::CReport2Dlg(CWnd* pParent /*=nullptr*/)
 	m_paddingAddedBuffer = new BYTE[MAX_IMAGE_BUFFER_SIZE];
 	m_bitInfo = new BITMAPINFO;
 
+	m_font.CreatePointFont(240, _T("Arial"));
+	m_iDrawIndex = -1;
+
 }
 
 CReport2Dlg::~CReport2Dlg()
@@ -85,9 +88,9 @@ BEGIN_MESSAGE_MAP(CReport2Dlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_EN_CHANGE(IDC_EDIT1, &CReport2Dlg::OnEnChangeEdit1)
 	ON_BN_CLICKED(IDC_BUTTON_DIR, &CReport2Dlg::OnBnClickedButtonDir)
-	ON_BN_CLICKED(IDC_BUTTON_SEARCH, &CReport2Dlg::OnBnClickedButtonSearch)
+//	ON_BN_CLICKED(IDC_BUTTON_SEARCH, &CReport2Dlg::OnBnClickedButtonSearch)
 	ON_BN_CLICKED(IDC_BUTTON_SAVEDIR, &CReport2Dlg::OnBnClickedButtonSavedir)
-	ON_BN_CLICKED(IDC_BUTTON_SAVE, &CReport2Dlg::OnBnClickedButtonSave)
+//	ON_BN_CLICKED(IDC_BUTTON_SAVE, &CReport2Dlg::OnBnClickedButtonSave)
 END_MESSAGE_MAP()
 
 
@@ -169,12 +172,17 @@ void CReport2Dlg::OnPaint()
 	}
 	else
 	{
-		CDC* dc;
-		dc = m_PictureControl.GetDC();
-		CRect rect;
-		m_PictureControl.GetWindowRect(&rect);
-		SetStretchBltMode(dc->GetSafeHdc(), COLORONCOLOR);  // set iMode.
-		if (StretchDIBits(dc->GetSafeHdc(), 0, 0, rect.Width(), rect.Height(), 0, 0,
+
+		CDC* pDC = GetDC();
+		pDC = m_PictureControl.GetDC();
+		CRect cPictureControlRect;
+		CRect cClientRect;
+
+		GetClientRect(cClientRect);
+		m_PictureControl.GetWindowRect(cPictureControlRect);
+
+		SetStretchBltMode(pDC->GetSafeHdc(), COLORONCOLOR);  // set iMode.
+		if (StretchDIBits(pDC->GetSafeHdc(), 0, 0, cPictureControlRect.Width(), cPictureControlRect.Height(), 0, 0,
 			m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight,
 			m_paddingAddedBuffer, m_bitInfo, DIB_RGB_COLORS, SRCCOPY) != GDI_ERROR)
 		{
@@ -182,7 +190,14 @@ void CReport2Dlg::OnPaint()
 
 		}
 		TRACE(_T("JPG File Paint Complete \n"));
+
+	
+		pDC->SelectObject(m_font);
+		
+		
 		CDialogEx::OnPaint();
+
+		ReleaseDC(pDC);
 	}
 
 	
@@ -210,8 +225,75 @@ void CReport2Dlg::OnEnChangeEdit1()
 void CReport2Dlg::InItContrl()
 {
 	m_editLoadPath.SetWindowTextW(_T("경로 지정"));
-	m_editSavePath.SetWindowTextW(_T("경로 지정"));
+	m_editSavePath.SetWindowTextW(_T("C:\\temp"));
 }
+
+//특정 디렉토리를 100밀리초 간격으로 검색 
+//파일이 있으면 파일을 읽어서 화면에 출력
+static UINT Thread1(LPVOID pParam)
+{
+	CFileFind find;
+	CReport2Dlg* pDlg = (CReport2Dlg*)AfxGetApp()->m_pMainWnd;
+	BOOL blsFile = FALSE;
+	CString sSearchPath = pDlg->m_sLoadDirPath;
+	int iTotal = 0;
+	int iPastTotal = 0;
+
+	//문자열의 오른쪽에서 한 개의 문자 반환 (검색어 설정)
+	//폴더 경로 끝에 \가 빠져있으면 추가해준다.
+	if (_T("\\") == sSearchPath.Right(1))
+	{
+		sSearchPath.Format(_T("%s*.jpg"), sSearchPath);
+	}
+	else
+	{
+		sSearchPath.Format(_T("%s\\*.jpg"), sSearchPath);
+		pDlg->m_sLoadDirPath += "\\";
+	}
+	//TRACE(sSearchPath);
+
+	//지정한 디렉터리에서 파일을 찾도록 설정 (100ms 주기로 검색)
+	//파일 이름을 StringArray에 넣기.
+	while (true)
+	{
+		Sleep(100);
+		pDlg->m_sArrayJpegName.RemoveAll();
+		iPastTotal = iTotal;
+		iTotal = 0;
+		blsFile = find.FindFile(sSearchPath);
+		if (blsFile)
+		{
+			//TRACE("\nFile Find\n");
+		}
+		else {
+			//TRACE("\n File not found \n");
+		}
+		while (blsFile)
+		{
+			blsFile = find.FindNextFileW();
+			if (!find.IsDots() && !find.IsDirectory())
+			{
+				iTotal++;
+				pDlg->m_sArrayJpegName.Add(find.GetFileName());
+			}
+
+		}
+
+		//CString sSleepResult;
+		//sSleepResult.Format(_T("디렉토리 탐색 완료, 찾은 jpg 파일 개수: %d"), iTotal);
+		//TRACE(sSleepResult);
+
+		//탐색한 파일의 개수가 변하면 JPEG 파일 출력 및 세팅 준비 다시하기!
+		if (iTotal != iPastTotal && iTotal > 0)
+		{
+			pDlg->LoadJpegFile();
+		}
+
+	}
+
+	return TRUE;
+}
+
 
 
 void CReport2Dlg::OnBnClickedButtonDir()
@@ -227,6 +309,7 @@ void CReport2Dlg::OnBnClickedButtonDir()
 	{
 		m_sLoadDirPath = picker.GetPathName();
 		m_editLoadPath.SetWindowTextW(m_sLoadDirPath);
+		AfxBeginThread(Thread1, this);
 		
 	}
 
@@ -238,7 +321,13 @@ void CReport2Dlg::OnBnClickedButtonSavedir()
 	if (IDOK == picker.DoModal())
 	{
 		m_sSaveDirPath = picker.GetPathName();
-		m_editSavePath.SetWindowTextW(m_sSaveDirPath = picker.GetPathName());
+
+		if (_T("\\") != m_sSaveDirPath.Right(1))
+		{
+			m_sSaveDirPath.Format(_T("%s\\"), m_sSaveDirPath);
+		}
+
+		m_editSavePath.SetWindowTextW(m_sSaveDirPath);
 	}
 }
 
@@ -256,33 +345,36 @@ static UINT Thread2(LPVOID pParam)
 }
 
 
+
+
+
 void CReport2Dlg::LoadJpegFile()
 {
 	CReport2Dlg* pDlg = (CReport2Dlg*)AfxGetApp()->m_pMainWnd;
 	CFile cFile;
+	CString sFilePath;
 
 
-	for (int i = 0; i < pDlg->m_listSearchedImg.GetSize(); i++)
-	{
-		Sleep(500);
-		CString filePath = pDlg->m_sLoadDirPath;
-		if (_T("\\") != filePath.Right(1))
+	for (int i = 0; i < pDlg->m_sArrayJpegName.GetSize(); i++)
+	{	
+		m_iDrawIndex = i;
+		sFilePath = m_sLoadDirPath + m_sArrayJpegName[i];
+		if (cFile.Open(sFilePath, CFile::modeRead | CFile::typeBinary))
 		{
-			filePath.Format(_T("%s\\"), filePath);
-		}
-		filePath += pDlg->m_listSearchedImg[i];
-		//TRACE(filePath);
-		if (cFile.Open(filePath, CFile::modeRead | CFile::typeBinary))
-		{
+			TRACE(_T("\n %d 번째 출력 \n"), i);
 			m_jpegHeaderInfo.iJpegSize = cFile.GetLength();
 			cFile.Read(m_jpegHeaderInfo.pJpegData, m_jpegHeaderInfo.iJpegSize);
+			CFileStatus cFileStatus;
+			cFile.GetStatus(cFileStatus);
+			
+
 			cFile.Close();
 
 			m_jpgCodec.DecodeImage(m_jpegHeaderInfo.pJpegData, m_jpegHeaderInfo.iJpegSize, m_outJpgBuffer, m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight, TJPF_BGR);
 			PrepareJpegImage(m_jpegHeaderInfo.iWidth * m_jpegHeaderInfo.iHeight * 3);
-			Invalidate();
+			DrawDataInfo();
 		}
-	
+
 	}
 }
 
@@ -306,6 +398,8 @@ void CReport2Dlg::PrepareJpegImage(int iDecodedJpegSize)
 		{
 			m_paddingAddedBuffer[iBytePointer++] = 0;
 		}
+
+	
 	}
 
 	m_jpegHeaderInfo.iWidth = iPaddingAddedWidth;
@@ -316,130 +410,113 @@ void CReport2Dlg::PrepareJpegImage(int iDecodedJpegSize)
 	m_bitInfo->bmiHeader.biCompression = BI_RGB;
 	m_bitInfo->bmiHeader.biWidth = m_jpegHeaderInfo.iWidth;
 	m_bitInfo->bmiHeader.biHeight = -m_jpegHeaderInfo.iHeight;
-	
+
+	CDC* cMemoryDC = NULL;
+	cMemoryDC->CreateCompatibleDC
+	HBITMAP hBitmap = CreateDIBitmap(hMemoryDC, &m_bitInfo->bmiHeader, 0, m_paddingAddedBuffer, m_bitInfo, DIB_RGB_COLORS);
+	SelectObject(hMemoryDC, hBitmap);
+
+
 
 
 }
 
 
-//특정 디렉토리를 100밀리초 간격으로 검색 
-//파일이 있으면 파일을 읽어서 화면에 출력
-static UINT Thread1(LPVOID pParam)
+//사진 헤더 정보 그리기 작업
+void CReport2Dlg::DrawColorText(CDC* pDC, CRect& rcText, COLORREF clrText, COLORREF clrOutline, CString& csText, UINT uiFormat)
 {
-	CFileFind find;
-	CReport2Dlg* pDlg = (CReport2Dlg*)AfxGetApp()->m_pMainWnd;
-	BOOL blsFile = FALSE;
-	CString sSearchPath = pDlg->m_sLoadDirPath;
-	int iTotal = 0;
-	int iPastTotal = 0;
-	
-	//문자열의 오른쪽에서 한 개의 문자 반환 (검색어 설정)
-	if (_T("\\") == sSearchPath.Right(1))
+	CRect rcOutLine = rcText;
+	pDC->SetTextColor(clrOutline);
+
+	for (int i = 0; i < 3; ++i)
 	{
-		sSearchPath.Format(_T("%s*.jpg"), sSearchPath);
-	}
-	else
-	{
-		sSearchPath.Format(_T("%s\\*.jpg"), sSearchPath);
-	}
-	TRACE(sSearchPath);
-
-	//지정한 디렉터리에서 파일을 찾도록 설정 (100ms 주기로 검색)
-	while (true)
-	{
-		Sleep(100);
-		pDlg->m_listSearchedImg.RemoveAll();
-		iPastTotal = iTotal;
-		iTotal = 0;
-		blsFile = find.FindFile(sSearchPath);
-		if (blsFile)
+		for (int j = 0; j < 3; ++j)
 		{
-			//TRACE("\nFile Find\n");
-		}
-		else {
-			//TRACE("\n File not found \n");
-		}
-		while (blsFile)
-		{
-			blsFile = find.FindNextFileW();
-			CString fileName;
-			fileName.Format(_T("\n FileName: %s \n"), find.GetFileName());
-			//TRACE(fileName);
-			//find에서 현재 검색된 파일이.(현재 디렉터리) 또는 ..(상위 디렉터리)
-			//현재 검색된 파일이 디렉터리인지?
-			if (!find.IsDots() && !find.IsDirectory())
-			{
-				iTotal++;
-				pDlg->m_listSearchedImg.Add(find.GetFileName());
-			}
+			if((1 == i) && (1 == j)) continue;
 
+			rcOutLine = rcText;
+			rcOutLine.OffsetRect(i, j);
+			pDC->DrawText(csText, rcOutLine, uiFormat);
 		}
-
-		CString sSleepResult;
-		sSleepResult.Format(_T("디렉토리 탐색 완료, 찾은 jpg 파일 개수: %d"), iTotal);
-		//TRACE(sSleepResult);
-
-		//탐색한 파일의 개수가 변하면 JPEG 파일 출력 및 세팅 준비 다시하기!
-		if (iTotal != iPastTotal && iTotal > 0)
-		{
-			pDlg->LoadJpegFile();
-		}
-
 	}
 
-	return TRUE;
+	pDC->SetTextColor(clrText);
+	rcText.OffsetRect(1, 1);
+	pDC->DrawText(csText, rcText, uiFormat);
 }
 
-//검색 버튼 클릭하면 이미지 탐색 스레드 시작
-void CReport2Dlg::OnBnClickedButtonSearch()
+//사진의 헤더 정보 화면에 출력
+void CReport2Dlg::DrawDataInfo(int index)
 {
-	AfxBeginThread(Thread1, this);
-}
+	CDC* pDC = m_PictureControl.GetDC();
 
-
-
-
-void CReport2Dlg::DrawDataInfo(CDC* pDC)
-{
-	
 	COLORREF crText = RGB(255, 255, 0);
 	COLORREF crBack = RGB(0, 0, 0);
-
+	int iTextHeight = 35;
+	pDC->SetBkMode(TRANSPARENT); // 배경색을 투명하게 설정
+	pDC->SetTextColor(crText);
 	CRect rcText;
 	m_PictureControl.GetWindowRect(rcText);
 	CString sText;
 
-	//rect x,y 옮기기
 	rcText.OffsetRect(5, 5);
-	sText.Format(_T("Width: %d"), m_jpegHeaderInfo.iWidth);
+	sText.Format(_T("Width:   %d"), m_jpegHeaderInfo.iWidth);
+	DrawColorText(pDC, rcText, crText, crBack, sText, DT_LEFT | DT_TOP | DT_SINGLELINE);
+	rcText.OffsetRect(0, iTextHeight);
+	sText.Format(_T("Height:  %d"), m_jpegHeaderInfo.iHeight);
+	DrawColorText(pDC, rcText, crText, crBack, sText, DT_LEFT | DT_TOP | DT_SINGLELINE);
+	rcText.OffsetRect(0, iTextHeight);
+	sText.Format(_T("Size:    %d"), m_jpegHeaderInfo.iJpegSize);
+	DrawColorText(pDC, rcText, crText, crBack, sText, DT_LEFT | DT_TOP | DT_SINGLELINE);
+
+	CFile cFile;
+	CFileStatus cFileStatus;
+	cFile.Open(m_sLoadDirPath + m_sArrayJpegName[index], CFile::modeRead | CFile::typeBinary);
+	cFile.GetStatus(cFileStatus);
+	cFile.Close();
+
+	SYSTEMTIME  stJpgCreate;
+	int iSize = sizeof(stJpgCreate);
+
+	rcText.OffsetRect(0, iTextHeight);
+	sText.Format(_T("Time: %04d.%02d.%02d.%02d.%02d.%02d"), cFileStatus.m_ctime.GetYear(), cFileStatus.m_ctime.GetMonth(), cFileStatus.m_ctime.GetDay(), cFileStatus.m_ctime.GetHour(), cFileStatus.m_ctime.GetMinute(), cFileStatus.m_ctime.GetSecond());
+	DrawColorText(pDC, rcText, crText, crBack, sText, DT_LEFT | DT_TOP | DT_SINGLELINE);
+
+	
 
 }
 
 
-//쓰레드 하나 더 생성해서 저장기능 따로 만들기
-void CReport2Dlg::OnBnClickedButtonSave()
+
+void CReport2Dlg::SaveJpegImage(int index)
 {
+	DATA_HEADER dataHeader;
+	GetLocalTime(&dataHeader.sysTime);
 	CFile cFile;
-	if (cFile.Open(m_sSaveDirPath, CFile::modeCreate | CFile::modeWrite | CFile::typeBinary))
+	CFileStatus cFileStatus;
+	cFile.Open(m_sLoadDirPath + m_sArrayJpegName[index], CFile::modeRead | CFile::typeBinary);
+	cFile.Close();
+	
+	//인코딩된 이미지 데이터 크기가 들어가 있다.
+	LPBYTE lpEncodedBuffer = nullptr;
+	int iJpegSize = 0;
+	if (m_jpgCodec.EncodeImage(m_paddingAddedBuffer, m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight, &lpEncodedBuffer, iJpegSize, 90, TJPF_BGR))
 	{
-		//인코딩 시에 동적할당
-
-		//인코딩하고 정해질 파일 사이즈
-		m_jpegHeaderInfo.iJpegSize = 0;
-		LPBYTE encodedJpgBuffer = nullptr;
-		if
-			(m_jpgCodec.EncodeImage(m_paddingAddedBuffer, m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight, &encodedJpgBuffer, m_jpegHeaderInfo.iJpegSize, 90, TJPF_BGR))
-		{
-			TRACE(_T("\nEncoding Success\n"));
-			TRACE(_T("\noutJpegSize: %d \n", outJpegSize));
-			cFile.Write(encodedJpgBuffer, m_jpegHeaderInfo.iJpegSize);
-		}
-		else
-		{
-			TRACE(_T("\nEncoding failed\n"));
-		}
-
+		dataHeader.iWidth = m_jpegHeaderInfo.iWidth;
+		dataHeader.iHeight = m_jpegHeaderInfo.iHeight;
+		dataHeader.iFileSize = iJpegSize;
+		
+		CString sSaveFileName;
+		sSaveFileName.Format(_T("%04d_%02d_%02d_%02d_%02d_%02d_%03d.dat"), dataHeader.sysTime.wYear,dataHeader.sysTime.wMonth,dataHeader.sysTime.wDay,dataHeader.sysTime.wHour,dataHeader.sysTime.wMinute,dataHeader.sysTime.wSecond,dataHeader.sysTime.wMilliseconds);
+		cFile.Open(m_sSaveDirPath + sSaveFileName, CFile::modeCreate | CFile::modeWrite | CFile::typeBinary);
+		BYTE* datByteBuffer = new BYTE[MAX_IMAGE_BUFFER_SIZE];
+		cFile.Write(&dataHeader, sizeof(dataHeader));
+		cFile.Write(datByteBuffer, iJpegSize);
 		cFile.Close();
-		TRACE(_T("OnSaveDocument"));
+
+		delete[] datByteBuffer;
+
+
+		
 	}
 }

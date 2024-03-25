@@ -8,6 +8,15 @@
 #define MAX_IMAGE_HEIGHT			2500
 #define MAX_IMAGE_BUFFER_SIZE		(MAX_IMAGE_WIDTH*MAX_IMAGE_HEIGHT*3)
 
+
+//.dat 데이터 헤더
+typedef struct _Data_Header
+{
+	int iWidth;
+	int iHeight;
+	int iFileSize;
+	SYSTEMTIME sysTime;
+}DATA_HEADER;
 // CReport2Dlg 대화 상자
 class CReport2Dlg : public CDialogEx
 {
@@ -21,14 +30,19 @@ public:
 	//JPG 파일 탐색 경로
 	CString m_sLoadDirPath;
 	CString m_sSaveDirPath;
+	CFont m_font;
 	//Jpg 파일 경로 저장 Array
-	CStringArray m_listSearchedImg;
+	CStringArray m_sArrayJpegName;
+	
 	TB_JPEG_HEADER_INFO m_jpegHeaderInfo;
 	CTubojpg m_jpgCodec; 
 	BITMAPINFO* m_bitInfo;
+	SYSTEMTIME m_JpegTime;
 
 	BYTE* m_outJpgBuffer;
 	BYTE* m_paddingAddedBuffer;
+
+	int m_iDrawIndex;
 
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_REPORT2_DIALOG };
@@ -55,11 +69,11 @@ public:
 	void InItContrl();
 	void FindImageFiles();
 	void LoadJpegFile();
-	afx_msg void OnBnClickedButtonSearch();
 	void PrepareJpegImage(int iDecodedJpegSize);
 	CStatic m_PictureControl;
-	void DrawDataInfo(CDC* pDC);
+	void CReport2Dlg::DrawDataInfo(int index);
 	CEdit m_editSavePath;
 	afx_msg void OnBnClickedButtonSavedir();
-	afx_msg void OnBnClickedButtonSave();
+	void DrawColorText(CDC* pDC, CRect& rcText, COLORREF clrText, COLORREF clrOutline, CString& csText, UINT uiFormat);
+	void SaveJpegImage(int index);
 };
