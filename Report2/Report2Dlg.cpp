@@ -501,15 +501,53 @@ void CReport2Dlg::OnBnClickedButtonCoordinate()
 	GetWindowRect(rc1);
 	GetClientRect(rc2);
 	
-	TRACE("\n창의 윈도우 좌표: %d %d %d %d  창의 클라이언트 좌표: %d %d %d %d \n\n", rc1.left, rc1.top, rc1.right, rc1.bottom, rc2.left, rc2.top, rc2.right, rc2.bottom);
+	TRACE("\nWindow Area Rect L: %d T: %d R: %d B: %d \nClient Area Rect L: %d T: %d R: %d B: %d \n\n", rc1.left, rc1.top, rc1.right, rc1.bottom, rc2.left, rc2.top, rc2.right, rc2.bottom);
 
-	m_btnCoordinate.GetWindowRect(rc1);
-	m_btnCoordinate.GetClientRect(rc2);
+	//m_btnCoordinate.GetWindowRect(rc1);
+	//m_btnCoordinate.GetClientRect(rc2);
 	
-	TRACE("\n\n 버튼 윈도우 좌표: %d %d %d %d 버튼 클라이언트 좌표: %d %d %d %d \n", rc1.left, rc1.top, rc1.right, rc1.bottom, rc2.left, rc2.top, rc2.right, rc2.bottom);
+	//TRACE("\n\n 버튼 윈도우 좌표: %d %d %d %d 버튼 클라이언트 좌표: %d %d %d %d \n", rc1.left, rc1.top, rc1.right, rc1.bottom, rc2.left, rc2.top, rc2.right, rc2.bottom);
 
-	int result = GetSystemMetrics(SM_CYEDGE);
-	TRACE("\n\nSystemMetrics: %d\n\n", result);
+
+	int iFrameWidth = rc1.Width() - rc2.Width();
+	int iFrameHeight = rc1.Height() - rc2.Height();
+
+	TRACE("\n\n Frame Width: %d \nFrame Height: %d \n\n", iFrameWidth, iFrameHeight);
+	TRACE("\n\nSystemMetrics EDGE_Y: %d\n\n", GetSystemMetrics(SM_CYEDGE));
+	TRACE("\n\nSystemMetrics EDGE_X: %d\n\n", GetSystemMetrics(SM_CXEDGE));
+
+	TRACE("\n\nSystemMetrics CXSIZEFRAME: %d\n\n", GetSystemMetrics(SM_CXSIZEFRAME));
+	TRACE("\n\nSystemMetrics SM_CYSIZEFRAME: %d\n\n", GetSystemMetrics(SM_CYSIZEFRAME));
+
+	TRACE("\n\nSystemMetrics CAPTION: %d\n\n", GetSystemMetrics(SM_CYCAPTION));
+	TRACE("\n\nSystemMetrics SM_CYBORDER: %d\n\n", GetSystemMetrics(SM_CYBORDER));
+	TRACE("\n\nSystemMetrics SM_CXBORDER: %d\n\n", GetSystemMetrics(SM_CXBORDER));
+	WINDOWINFO* windowInfo = new WINDOWINFO;
+	this->GetWindowInfo(windowInfo);
+
+//
+//
+//	// mCaptionHeight is the default size of the NC area at
+//// the top of the window. If the window has a caption,
+//// the size is calculated as the sum of:
+////      SM_CYFRAME        - The thickness of the sizing border
+////                          around a resizable window
+////      SM_CXPADDEDBORDER - The amount of border padding
+////                          for captioned windows
+////      SM_CYCAPTION      - The height of the caption area
+////
+//
+//	int height = (GetSystemMetrics(SM_CYFRAME) + GetSystemMetrics(SM_CYCAPTION) +
+//		GetSystemMetrics(SM_CXPADDEDBORDER));
+//	TRACE("\n\n title bar height : %d \n\n", height);
+//	int iEdge;     // 테투리 라인 굵기  
+//	int iHeight;   // 실제 높이  		
+//	// 테투리 사이즈를 구하고		
+//	iEdge = GetSystemMetrics(SM_CYEDGE);
+//	// 테투리 사이즈를 더한 높이가 실제 높이  
+//	iHeight = GetSystemMetrics(SM_CYCAPTION) + iEdge;
+
+
 
 	
 
@@ -518,7 +556,7 @@ void CReport2Dlg::OnBnClickedButtonCoordinate()
 
 void CReport2Dlg::OnMouseMove(UINT nFlags, CPoint point) 
 {
-	//OnBnClickedButtonCoordinate();
+	//TRACE("\n\n Point x: %d Point y: %d \n\n", point.x, point.y);
 
 	CDialogEx::OnMouseMove(nFlags, point);
 }

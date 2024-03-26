@@ -38,7 +38,6 @@ public:
 	CTubojpg m_jpgCodec; 
 	BITMAPINFO* m_bitInfo;
 	SYSTEMTIME m_JpegTime;
-	CDC* memDC;
 	BYTE* m_outJpgBuffer;
 	BYTE* m_paddingAddedBuffer;
 
