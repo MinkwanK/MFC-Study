@@ -38,7 +38,7 @@ public:
 	CTubojpg m_jpgCodec; 
 	BITMAPINFO* m_bitInfo;
 	SYSTEMTIME m_JpegTime;
-
+	CDC* memDC;
 	BYTE* m_outJpgBuffer;
 	BYTE* m_paddingAddedBuffer;
 
@@ -67,13 +67,15 @@ public:
 	afx_msg void OnBnClickedButtonDir();
 	CEdit m_editLoadPath;
 	void InItContrl();
-	void FindImageFiles();
 	void LoadJpegFile();
-	void PrepareJpegImage(int iDecodedJpegSize);
+	void CReport2Dlg::PrepareJpegImage(int iDecodedJpegSize, int iJpegEncodedWidth, int iJpegEncodedHeight);
 	CStatic m_PictureControl;
-	void CReport2Dlg::DrawDataInfo(CDC* memDC);
+	void CReport2Dlg::DrawDataInfo(CDC* memDC, CRect rcDisp);
 	CEdit m_editSavePath;
 	afx_msg void OnBnClickedButtonSavedir();
 	void DrawColorText(CDC* pDC, CRect& rcText, COLORREF clrText, COLORREF clrOutline, CString& csText, UINT uiFormat);
-	void SaveJpegImage(int index);
+	void SaveJpegImage(int index, int iJpegEncodedWidth, int iJpegEncodedHeight);
+	afx_msg void OnBnClickedButtonCoordinate();
+	CButton m_btnCoordinate;
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 };
