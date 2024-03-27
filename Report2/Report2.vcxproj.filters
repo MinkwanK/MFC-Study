@@ -16,6 +16,12 @@
     <Filter Include="Util">
       <UniqueIdentifier>{58e76f6a-a8e7-4fd9-8f66-bd7a80da1c4e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Include">
+      <UniqueIdentifier>{592e23aa-7203-43b5-b8d1-ac1178e62473}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Display">
+      <UniqueIdentifier>{d830c0ee-4e15-4a0e-8a77-5fdd235f5de5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Report2.h">
@@ -39,6 +45,21 @@
     <ClInclude Include="TurboJpg.h">
       <Filter>Util</Filter>
     </ClInclude>
+    <ClInclude Include="CommonDefine.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="EnforceFile.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="NetProtocolDefine.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="DisplayStatic.h">
+      <Filter>Display</Filter>
+    </ClInclude>
+    <ClInclude Include="EnforceDisplay.h">
+      <Filter>Display</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Report2.cpp">
@@ -52,6 +73,15 @@
     </ClCompile>
     <ClCompile Include="TurboJpg.cpp">
       <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="EnforceFile.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="DisplayStatic.cpp">
+      <Filter>Display</Filter>
+    </ClCompile>
+    <ClCompile Include="EnforceDisplay.cpp">
+      <Filter>Display</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

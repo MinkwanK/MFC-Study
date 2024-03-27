@@ -185,7 +185,12 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CommonDefine.h" />
+    <ClInclude Include="DisplayStatic.h" />
+    <ClInclude Include="EnforceDisplay.h" />
+    <ClInclude Include="EnforceFile.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="NetProtocolDefine.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Report2.h" />
     <ClInclude Include="Report2Dlg.h" />
@@ -194,6 +199,9 @@
     <ClInclude Include="TurboJpg.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DisplayStatic.cpp" />
+    <ClCompile Include="EnforceDisplay.cpp" />
+    <ClCompile Include="EnforceFile.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

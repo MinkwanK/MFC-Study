@@ -4,6 +4,9 @@
 
 #pragma once
 #include "TurboJpg.h"
+#include "EnforceFile.h"
+#include "EnforceDisplay.h"
+
 #define MAX_IMAGE_WIDTH				4600
 #define MAX_IMAGE_HEIGHT			2500
 #define MAX_IMAGE_BUFFER_SIZE		(MAX_IMAGE_WIDTH*MAX_IMAGE_HEIGHT*3)
@@ -32,7 +35,7 @@ public:
 	CString m_sSaveDirPath;
 	CFont m_font;
 	//Jpg 파일 경로 저장 Array
-	CStringArray m_sArrayJpegName;
+	CStringArray m_sArrayFileName;
 	
 	TB_JPEG_HEADER_INFO m_jpegHeaderInfo;
 	CTubojpg m_jpgCodec; 
@@ -40,6 +43,9 @@ public:
 	SYSTEMTIME m_JpegTime;
 	BYTE* m_outJpgBuffer;
 	BYTE* m_paddingAddedBuffer;
+
+	CEnforceFile m_enforceFile;
+	CEnforceDisplay m_enforceDisp;
 
 	int m_iDrawIndex;
 
@@ -63,7 +69,7 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnEnChangeEdit1();
-	afx_msg void OnBnClickedButtonDir();
+	afx_msg void OnBnClickedButtonLoadDir();
 	CEdit m_editLoadPath;
 	void InItContrl();
 	void LoadJpegFile();
@@ -77,4 +83,5 @@ public:
 	afx_msg void OnBnClickedButtonCoordinate();
 	CButton m_btnCoordinate;
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	void LoadFile();
 };

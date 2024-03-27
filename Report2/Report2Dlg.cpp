@@ -88,7 +88,7 @@ BEGIN_MESSAGE_MAP(CReport2Dlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_EN_CHANGE(IDC_EDIT1, &CReport2Dlg::OnEnChangeEdit1)
-	ON_BN_CLICKED(IDC_BUTTON_DIR, &CReport2Dlg::OnBnClickedButtonDir)
+	ON_BN_CLICKED(IDC_BUTTON_DIR, &CReport2Dlg::OnBnClickedButtonLoadDir)
 //	ON_BN_CLICKED(IDC_BUTTON_SEARCH, &CReport2Dlg::OnBnClickedButtonSearch)
 	ON_BN_CLICKED(IDC_BUTTON_SAVEDIR, &CReport2Dlg::OnBnClickedButtonSavedir)
 //	ON_BN_CLICKED(IDC_BUTTON_SAVE, &CReport2Dlg::OnBnClickedButtonSave)
@@ -224,11 +224,11 @@ static UINT Thread1(LPVOID pParam)
 	//폴더 경로 끝에 \가 빠져있으면 추가해준다.
 	if (_T("\\") == sSearchPath.Right(1))
 	{
-		sSearchPath.Format(_T("%s*.jpg"), sSearchPath);
+		sSearchPath.Format(_T("%s*.G0001"), sSearchPath);
 	}
 	else
 	{
-		sSearchPath.Format(_T("%s\\*.jpg"), sSearchPath);
+		sSearchPath.Format(_T("%s\\*.G0001"), sSearchPath);
 		pDlg->m_sLoadDirPath += "\\";
 	}
 
@@ -236,30 +236,31 @@ static UINT Thread1(LPVOID pParam)
 	//지정한 디렉터리에서 파일을 찾도록 설정 (100ms 주기로 검색)
 	//파일 이름을 StringArray에 넣기.
 	while (true)
-	{ 
-		
+	{	
+		Sleep(50);
 		iPastTotal = iTotal;
 		iTotal = 0;
 		blsFile = find.FindFile(sSearchPath);
-		if (blsFile == FALSE)
-			break;
 
-		pDlg->m_sArrayJpegName.RemoveAll();
+		if (pDlg->m_sArrayFileName.GetSize() > 0)
+		{
+			pDlg->m_sArrayFileName.RemoveAll();
+		}
 		while (blsFile)
 		{
 			blsFile = find.FindNextFileW();
 			if (!find.IsDots() && !find.IsDirectory())
 			{
 				iTotal++;
-				pDlg->m_sArrayJpegName.Add(find.GetFileName());
+				pDlg->m_sArrayFileName.Add(find.GetFileName());
 			}
-
+			
 		}
 
-		//탐색한 파일의 개수가 변하면 JPEG 파일 출력 및 세팅 준비 다시하기!
+		//탐색한 파일의 이름들을 모두 CStringArray에 넣었으니 이것을 하나하나 꺼내보자!
 		if (iTotal != iPastTotal && iTotal > 0)
 		{
-			pDlg->LoadJpegFile();
+			pDlg->LoadFile();
 		}
 
 	}
@@ -267,9 +268,27 @@ static UINT Thread1(LPVOID pParam)
 	return TRUE;
 }
 
+void CReport2Dlg::LoadFile()
+{
+	//폴더 내 파일경로 이름 가져오기
+	for (int i = 0; m_sArrayFileName.GetSize(); i++)
+	{
+		CString sFullPath = m_sLoadDirPath + m_sArrayFileName[i];
+		if (m_enforceFile.LoadEnforceFile(sFullPath))
+		{
+			m_enforceDisp.SetEnforceFile(sFullPath);
+
+		}
+		
+	}
+
+	
+
+}
 
 
-void CReport2Dlg::OnBnClickedButtonDir()
+
+void CReport2Dlg::OnBnClickedButtonLoadDir()
 {
 	/*
 		초기 폴더 경로로 사용될 변수
@@ -311,11 +330,11 @@ void CReport2Dlg::LoadJpegFile()
 	CString sFilePath;
 
 
-	for (int i = 0; i < pDlg->m_sArrayJpegName.GetSize(); i++)
+	for (int i = 0; i < pDlg->m_sArrayFileName.GetSize(); i++)
 	{	
-		Sleep(100);
+		Sleep(50);
 		m_iDrawIndex = i;
-		sFilePath = m_sLoadDirPath + m_sArrayJpegName[i];
+		sFilePath = m_sLoadDirPath + m_sArrayFileName[i];
 		if (cFile.Open(sFilePath, CFile::modeRead | CFile::typeBinary))
 		{
 			TRACE(_T("\n %d 번째 출력 \n"), i);
@@ -373,24 +392,26 @@ void CReport2Dlg::PrepareJpegImage(int iDecodedJpegSize,int iJpegEncodedWidth, i
 	CBitmap bmp, * pOldbmp;
 	CRect picRect;
 	m_PictureControl.GetClientRect(picRect);
+	int iWidth = picRect.Width();
+	int iHeight = picRect.Height();
 	memDC->CreateCompatibleDC(picDC);
-	bmp.CreateCompatibleBitmap(picDC, picRect.Width(), picRect.Height());
+	bmp.CreateCompatibleBitmap(picDC, iWidth, iHeight);
 	pOldbmp = memDC->SelectObject(&bmp);
 	bmp.DeleteObject();
 	pOldbmp->DeleteObject();
-	StretchDIBits(memDC->GetSafeHdc(), 0, 0, picRect.Width(), picRect.Height(), 0, 0, m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight, m_paddingAddedBuffer, m_bitInfo, DIB_RGB_COLORS, SRCCOPY);
+	StretchDIBits(memDC->GetSafeHdc(), 0, 0, iWidth, iHeight, 0, 0, m_jpegHeaderInfo.iWidth, m_jpegHeaderInfo.iHeight, m_paddingAddedBuffer, m_bitInfo, DIB_RGB_COLORS, SRCCOPY);
 
 
 	memDC->SelectObject(m_font);
 	DrawDataInfo(memDC, picRect);
-	picDC->BitBlt(0, 0, picRect.Width(), picRect.Height(), memDC, 0, 0, SRCCOPY);
+	picDC->BitBlt(0, 0, iWidth, iHeight, memDC, 0, 0, SRCCOPY);
 	SaveJpegImage(m_iDrawIndex, iJpegEncodedWidth, iJpegEncodedHeight);
 
 
 
-	//delete pOldbmp;
 	DeleteObject(memDC);
-	ReleaseDC(memDC);
+	DeleteObject(picDC);
+	delete memDC;
 	ReleaseDC(picDC);
 	
 
@@ -443,7 +464,7 @@ void CReport2Dlg::DrawDataInfo(CDC* memDC, CRect rcDisp)
 
 	CFile cFile;
 	CFileStatus cFileStatus;
-	cFile.Open(m_sLoadDirPath + m_sArrayJpegName[m_iDrawIndex], CFile::modeRead | CFile::typeBinary);
+	cFile.Open(m_sLoadDirPath + m_sArrayFileName[m_iDrawIndex], CFile::modeRead | CFile::typeBinary);
 	cFile.GetStatus(cFileStatus);
 	cFile.Close();
 
@@ -474,7 +495,7 @@ void CReport2Dlg::SaveJpegImage(int index, int iJpegEncodedWidth, int iJpegEncod
 
 
 	BYTE* encodedJpegBuffer;
-	cFile.Open(m_sLoadDirPath + m_sArrayJpegName[index], CFile::modeReadWrite | CFile::typeBinary);
+	cFile.Open(m_sLoadDirPath + m_sArrayFileName[index], CFile::modeReadWrite | CFile::typeBinary);
 	UINT iJpegSize = cFile.GetLength();
 	encodedJpegBuffer = new BYTE[iJpegSize];
 	dataHeader.iWidth = iJpegEncodedWidth;
@@ -488,7 +509,7 @@ void CReport2Dlg::SaveJpegImage(int index, int iJpegEncodedWidth, int iJpegEncod
 
 	sSaveFileName.Format(_T("%04d_%02d_%02d_%02d_%02d_%02d_%03d.dat"), dataHeader.sysTime.wYear, dataHeader.sysTime.wMonth, dataHeader.sysTime.wDay, dataHeader.sysTime.wHour, dataHeader.sysTime.wMinute, dataHeader.sysTime.wSecond, dataHeader.sysTime.wMilliseconds);
 
-	MoveFile(m_sLoadDirPath+ m_sArrayJpegName[index],m_sSaveDirPath+ sSaveFileName);
+	MoveFile(m_sLoadDirPath+ m_sArrayFileName[index],m_sSaveDirPath+ sSaveFileName);
 
 	delete[] encodedJpegBuffer;
 
@@ -498,21 +519,18 @@ void CReport2Dlg::SaveJpegImage(int index, int iJpegEncodedWidth, int iJpegEncod
 void CReport2Dlg::OnBnClickedButtonCoordinate()
 {
 	CRect rc1, rc2,rc3,rc4;
+	m_PictureControl.GetWindowRect(rc1);
+	m_PictureControl.GetClientRect(rc2);
+	
+	TRACE("\nWindow Area Rect[PictureControl] L: %d T: %d R: %d B: %d \nClient Area Rect[PictureControl] L: %d T: %d R: %d B: %d \n\n", rc1.left, rc1.top, rc1.right, rc1.bottom, rc2.left, rc2.top, rc2.right, rc2.bottom);
+
 	GetWindowRect(rc1);
 	GetClientRect(rc2);
-	
-	TRACE("\nWindow Area Rect L: %d T: %d R: %d B: %d \nClient Area Rect L: %d T: %d R: %d B: %d \n\n", rc1.left, rc1.top, rc1.right, rc1.bottom, rc2.left, rc2.top, rc2.right, rc2.bottom);
-
-	//m_btnCoordinate.GetWindowRect(rc1);
-	//m_btnCoordinate.GetClientRect(rc2);
-	
-	//TRACE("\n\n 버튼 윈도우 좌표: %d %d %d %d 버튼 클라이언트 좌표: %d %d %d %d \n", rc1.left, rc1.top, rc1.right, rc1.bottom, rc2.left, rc2.top, rc2.right, rc2.bottom);
-
-
-	int iFrameWidth = rc1.Width() - rc2.Width();
+	TRACE("\nWindow Area Rect L: %d T: %d R: %d B: %d \nClient Area Rect: %d T: %d R: %d B: %d \n\n", rc1.left, rc1.top, rc1.right, rc1.bottom, rc2.left, rc2.top, rc2.right, rc2.bottom);
+	/*int iFrameWidth = rc1.Width() - rc2.Width();
 	int iFrameHeight = rc1.Height() - rc2.Height();
 
-	TRACE("\n\n Frame Width: %d \nFrame Height: %d \n\n", iFrameWidth, iFrameHeight);
+	TRACE("\n\nFrame Width: %d \nFrame Height: %d \n\n", iFrameWidth, iFrameHeight);
 	TRACE("\n\nSystemMetrics EDGE_Y: %d\n\n", GetSystemMetrics(SM_CYEDGE));
 	TRACE("\n\nSystemMetrics EDGE_X: %d\n\n", GetSystemMetrics(SM_CXEDGE));
 
@@ -524,7 +542,7 @@ void CReport2Dlg::OnBnClickedButtonCoordinate()
 	TRACE("\n\nSystemMetrics SM_CXBORDER: %d\n\n", GetSystemMetrics(SM_CXBORDER));
 	WINDOWINFO* windowInfo = new WINDOWINFO;
 	this->GetWindowInfo(windowInfo);
-
+	TRACE("\n\nWindow Info [cxWindowBorders: %d cyWindowBorders: %d] \n\n", windowInfo->cxWindowBorders,windowInfo->cyWindowBorders);*/
 //
 //
 //	// mCaptionHeight is the default size of the NC area at
@@ -548,7 +566,10 @@ void CReport2Dlg::OnBnClickedButtonCoordinate()
 //	iHeight = GetSystemMetrics(SM_CYCAPTION) + iEdge;
 
 
+		//m_btnCoordinate.GetWindowRect(rc1);
+	//m_btnCoordinate.GetClientRect(rc2);
 
+	//TRACE("\n\n 버튼 윈도우 좌표: %d %d %d %d 버튼 클라이언트 좌표: %d %d %d %d \n", rc1.left, rc1.top, rc1.right, rc1.bottom, rc2.left, rc2.top, rc2.right, rc2.bottom);
 	
 
 }
@@ -560,3 +581,4 @@ void CReport2Dlg::OnMouseMove(UINT nFlags, CPoint point)
 
 	CDialogEx::OnMouseMove(nFlags, point);
 }
+
